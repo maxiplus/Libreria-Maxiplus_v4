@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Librería Maxiplus</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<script src="api.js"></script>
+<style>
+:root {
+  --verde: #16a34a;
+  --verde-claro: #dcfce7;
+  --verde-oscuro: #15803d;
+  --amarillo: #FFD000;
+  --rojo: #E63946;
+  --texto: #1a1a2e;
+  --gris: #6b7280;
+  --fondo: #f8f9fc;
+  --sombra: 0 2px 12px rgba(22,163,74,0.10);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--fondo); color: var(--texto); }
+
+header { background: var(--verde); color: white; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; height: 62px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+.logo { font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 1.35rem; display: flex; align-items: center; gap: 8px; }
+.logo span { background: var(--amarillo); color: var(--texto); border-radius: 6px; padding: 2px 8px; }
+.carrito-btn { background: var(--amarillo); color: var(--texto); border: none; border-radius: 10px; padding: 9px 15px; font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.92rem; cursor: pointer; display: flex; align-items: center; gap: 7px; }
+.carrito-count { background: var(--rojo); color: white; border-radius: 50%; width: 21px; height: 21px; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; }
+
+.hero { background: linear-gradient(135deg, var(--verde), var(--verde-oscuro)); color: white; padding: 38px 20px 32px; text-align: center; }
+.hero-badge { display: inline-block; background: var(--amarillo); color: var(--texto); font-family: 'Nunito', sans-serif; font-weight: 800; border-radius: 20px; padding: 4px 14px; font-size: 0.85rem; margin-bottom: 12px; }
+.hero h1 { font-family: 'Nunito', sans-serif; font-size: 1.9rem; font-weight: 900; margin-bottom: 6px; }
+.hero p { font-size: 0.97rem; opacity: 0.88; }
+
+.buscador-wrap { padding: 14px 18px 4px; }
+.buscador-inner { display: flex; align-items: center; background: white; border: 2px solid #e5e7eb; border-radius: 14px; padding: 0 13px; gap: 9px; transition: border-color 0.2s; }
+.buscador-inner:focus-within { border-color: var(--verde); box-shadow: 0 0 0 3px rgba(22,163,74,0.12); }
+.buscador-input { flex: 1; border: none; outline: none; font-family: 'Nunito', sans-serif; font-size: 0.93rem; font-weight: 600; color: var(--texto); padding: 11px 0; background: transparent; }
+.buscador-input::placeholder { color: #9ca3af; font-weight: 500; }
+.buscador-clear { background: none; border: none; cursor: pointer; color: var(--gris); font-size: 1rem; display: none; padding: 4px; }
+
+.categorias { display: flex; gap: 9px; padding: 13px 18px 4px; overflow-x: auto; scrollbar-width: none; }
+.categorias::-webkit-scrollbar { display: none; }
+.cat-btn { background: white; border: 2px solid #e5e7eb; border-radius: 20px; padding: 6px 15px; font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.83rem; color: var(--gris); cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+.cat-btn.active, .cat-btn:hover { background: var(--verde); color: white; border-color: var(--verde); }
+
+.seccion-titulo { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 1.1rem; padding: 16px 18px 4px; }
+
+.productos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 13px; padding: 10px 18px 28px; }
+
+.producto-card { background: white; border-radius: 16px; box-shadow: var(--sombra); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.18s, box-shadow 0.18s; }
+.producto-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(22,163,74,0.18); }
+.producto-card.agotado { opacity: 0.55; }
+
+.producto-img { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 3rem; background: var(--verde-claro); position: relative; overflow: hidden; cursor: zoom-in; }
+.producto-img img { width: 100%; height: 100%; object-fit: cover; }
+.producto-img-mini-dots { position: absolute; bottom: 5px; left: 5px; display: flex; gap: 3px; z-index: 2; }
+.producto-img-mini-dots span { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.85); box-shadow: 0 0 2px rgba(0,0,0,0.4); }
+.badge-codigo { position: absolute; bottom: 5px; right: 5px; background: rgba(0,0,0,0.55); color: white; font-family: 'Nunito', sans-serif; font-size: 0.68rem; font-weight: 700; border-radius: 5px; padding: 2px 5px; letter-spacing: 1px; }
+.badge-agotado { position: absolute; top: 7px; left: 7px; background: var(--rojo); color: white; font-family: 'Nunito', sans-serif; font-size: 0.68rem; font-weight: 800; border-radius: 5px; padding: 2px 7px; }
+
+.producto-info { padding: 10px 11px 4px; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.producto-codigo { font-family: 'Nunito', sans-serif; font-size: 0.7rem; font-weight: 700; color: var(--gris); letter-spacing: 1px; }
+.producto-nombre { font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.88rem; line-height: 1.3; }
+.producto-desc { font-size: 0.74rem; color: var(--gris); line-height: 1.3; }
+.producto-precio { font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 1.05rem; color: var(--verde); margin-top: 4px; }
+.producto-stock { font-size: 0.7rem; color: var(--gris); margin-top: 1px; }
+.producto-stock.bajo { color: #f59e0b; font-weight: 700; }
+
+.detalle-btn { background: none; border: none; color: var(--verde); font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.76rem; cursor: pointer; padding: 5px 0 4px; display: flex; align-items: center; gap: 4px; }
+.detalle-flecha { display: inline-block; transition: transform 0.25s; }
+.detalle-btn.abierto .detalle-flecha { transform: rotate(180deg); }
+.detalle-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s; background: var(--verde-claro); border-radius: 8px; font-size: 0.76rem; color: #374151; line-height: 1.5; padding: 0 9px; margin-bottom: 4px; }
+.detalle-body.abierto { max-height: 200px; padding: 7px 9px; }
+
+.agregar-btn { background: var(--verde); color: white; border: none; border-radius: 10px; padding: 9px; width: calc(100% - 22px); margin: 4px 11px 11px; font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.83rem; cursor: pointer; transition: background 0.15s; }
+.agregar-btn:hover { background: var(--verde-oscuro); }
+.agregar-btn.agregado { background: var(--verde-oscuro); }
+.agregar-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; }
+.overlay.activo { display: block; }
+
+.carrito-panel { position: fixed; top: 0; right: -100%; width: min(380px, 100vw); height: 100vh; background: white; z-index: 300; display: flex; flex-direction: column; transition: right 0.3s ease; box-shadow: -4px 0 30px rgba(0,0,0,0.15); }
+.carrito-panel.abierto { right: 0; }
+.carrito-header { background: var(--verde); color: white; padding: 17px 19px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.carrito-header h2 { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 1.1rem; }
+.cerrar-btn { background: rgba(255,255,255,0.2); border: none; color: white; border-radius: 8px; width: 31px; height: 31px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+.carrito-items { flex: 1; overflow-y: auto; padding: 13px; display: flex; flex-direction: column; gap: 10px; }
+.carrito-item { display: flex; align-items: center; gap: 10px; background: var(--fondo); border-radius: 12px; padding: 10px; }
+.carrito-item-img { font-size: 1.7rem; width: 43px; height: 43px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 8px; background: var(--verde-claro); }
+.carrito-item-img img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+.carrito-item-info { flex: 1; min-width: 0; }
+.carrito-item-nombre { font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.carrito-item-cod { font-size: 0.68rem; color: var(--gris); letter-spacing: 1px; }
+.carrito-item-precio { font-size: 0.82rem; color: var(--verde); font-weight: 700; margin-top: 2px; }
+.cantidad-ctrl { display: flex; align-items: center; gap: 6px; margin-top: 5px; }
+.cantidad-btn { background: var(--verde); color: white; border: none; border-radius: 6px; width: 25px; height: 25px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+.cantidad-num { font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.93rem; min-width: 20px; text-align: center; }
+.eliminar-item { background: none; border: none; color: var(--rojo); cursor: pointer; font-size: 1.05rem; padding: 4px; flex-shrink: 0; }
+
+.carrito-vacio { text-align: center; padding: 48px 20px; color: var(--gris); }
+.carrito-vacio .icono { font-size: 2.8rem; margin-bottom: 10px; }
+.carrito-vacio p { font-family: 'Nunito', sans-serif; font-weight: 700; }
+
+.carrito-footer { border-top: 2px solid #e5e7eb; padding: 15px 19px; flex-shrink: 0; }
+.total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.total-label { font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.93rem; color: var(--gris); }
+.total-monto { font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 1.4rem; color: var(--verde); }
+.pedir-btn { background: #25D366; color: white; border: none; border-radius: 12px; padding: 13px; width: 100%; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.97rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.15s; }
+.pedir-btn:hover { background: #1ebe5a; }
+.pedir-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+
+.flotantes-wrap { position: fixed; bottom: 22px; right: 18px; display: flex; flex-direction: column; gap: 12px; z-index: 500; align-items: center; }
+
+/* --- Badge oferta en tarjeta de producto --- */
+.badge-oferta { position: absolute; top: 7px; right: 7px; background: #dc2626; color: white; font-size: 0.65rem; font-weight: 900; border-radius: 6px; padding: 2px 6px; font-family: 'Nunito', sans-serif; }
+.precio-original { text-decoration: line-through; color: #9ca3af; font-size: 0.8rem; margin-right: 4px; }
+.precio-oferta-txt { color: #dc2626; font-weight: 900; }
+
+/* --- Banner descuento QR en carrito --- */
+.banner-qr { background: #fffbeb; border: 1.5px solid #fcd34d; border-radius: 10px; padding: 10px 13px; margin-bottom: 12px; font-size: 0.8rem; line-height: 1.4; display: none; }
+.banner-qr.visible { display: block; }
+.banner-qr strong { color: #92400e; }
+.banner-qr .ahorro { color: #16a34a; font-weight: 800; }
+
+/* --- Modal buscador de pedidos --- */
+.modal-pedido-overlay { display: none; position: fixed; inset: 0; background: rgba(10,15,12,0.75); z-index: 600; align-items: center; justify-content: center; padding: 16px; }
+.modal-pedido-overlay.activo { display: flex; }
+.modal-pedido-card { background: white; border-radius: 16px; width: 100%; max-width: 420px; overflow: hidden; }
+.modal-pedido-header { background: var(--verde); color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; }
+.modal-pedido-header h3 { font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 1rem; }
+.modal-pedido-cerrar { background: rgba(255,255,255,0.2); border: none; color: white; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 1rem; }
+.modal-pedido-body { padding: 18px 20px; }
+.input-codigo-pedido { width: 100%; padding: 11px 13px; border: 1.5px solid #e5e7eb; border-radius: 9px; font-size: 0.95rem; font-family: 'Nunito', sans-serif; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+.input-codigo-pedido:focus { outline: none; border-color: var(--verde); }
+.btn-buscar-pedido { width: 100%; background: var(--verde); color: white; border: none; border-radius: 9px; padding: 11px; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.9rem; cursor: pointer; margin-top: 10px; }
+.resultado-pedido { margin-top: 14px; }
+.resultado-pedido .item-pedido { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #f3f4f6; font-size: 0.85rem; }
+.resultado-pedido .total-pedido { display: flex; justify-content: space-between; padding: 10px 0 0; font-weight: 800; font-size: 0.92rem; }
+.resultado-pedido .estado-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; margin-bottom: 10px; }
+.estado-badge.pendiente { background: #fef3c7; color: #92400e; }
+.estado-badge.aprobado  { background: #dcfce7; color: #15803d; }
+.estado-badge.devuelto  { background: #fee2e2; color: #991b1b; }
+.error-pedido { color: #dc2626; font-size: 0.84rem; margin-top: 10px; text-align: center; }
+
+/* --- Tiendas en footer --- */
+.tiendas-strip { background: var(--verde-oscuro); padding: 16px 18px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.tienda-btn { display: flex; align-items: center; gap: 7px; padding: 9px 16px; border-radius: 10px; font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.82rem; text-decoration: none; transition: background 0.15s; border: 2px solid rgba(255,255,255,0.25); color: white; cursor: pointer; background: rgba(255,255,255,0.12); }
+.tienda-btn:hover { background: rgba(255,255,255,0.22); }
+.tienda-btn.activa { background: var(--amarillo); color: var(--texto); border-color: var(--amarillo); }
+.tienda-btn.deshabilitada { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+.boton-flotante { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 14px rgba(0,0,0,0.25); text-decoration: none; transition: transform 0.15s; }
+.boton-flotante:hover { transform: scale(1.08); }
+.boton-whatsapp-chat { background: #25D366; }
+.boton-extra { background: #6b7280; font-size: 1.3rem; }
+
+@media (max-width: 480px) {
+  .flotantes-wrap { bottom: 16px; right: 14px; }
+  .boton-flotante { width: 50px; height: 50px; }
+}
+
+.sin-resultados { text-align: center; padding: 48px 20px; color: var(--gris); grid-column: 1 / -1; }
+.sin-resultados .icono { font-size: 2.8rem; margin-bottom: 10px; }
+.sin-resultados p { font-family: 'Nunito', sans-serif; font-weight: 700; }
+
+.toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1a1a2e; color: white; padding: 10px 20px; border-radius: 12px; font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.9rem; z-index: 500; transition: transform 0.3s ease; white-space: nowrap; pointer-events: none; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+footer { background: var(--verde); color: rgba(255,255,255,0.8); text-align: center; padding: 18px; font-size: 0.83rem; }
+footer strong { color: white; }
+
+/* ===== VISOR DE IMÁGENES (Lightbox con deslizador) ===== */
+.visor-overlay { display: none; position: fixed; inset: 0; background: rgba(10,15,12,0.92); z-index: 600; align-items: center; justify-content: center; }
+.visor-overlay.activo { display: flex; }
+
+.visor-cerrar { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.15); border: none; color: white; width: 38px; height: 38px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; transition: background 0.15s; }
+.visor-cerrar:hover { background: rgba(255,255,255,0.28); }
+
+.visor-contador { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); color: white; font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.85rem; background: rgba(255,255,255,0.15); padding: 5px 13px; border-radius: 20px; z-index: 10; }
+
+.visor-track-wrap { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+.visor-track { display: flex; height: min(85vh, 85vw); width: 100%; transition: transform 0.32s cubic-bezier(.4,0,.2,1); touch-action: pan-y; }
+.visor-track.sin-transicion { transition: none; }
+.visor-slide { flex: 0 0 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 0 50px; }
+.visor-slide img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 10px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); user-select: none; -webkit-user-drag: none; }
+.visor-slide span.emoji-grande { font-size: 9rem; }
+
+.visor-flecha { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.15); border: none; color: white; width: 44px; height: 44px; border-radius: 50%; font-size: 1.3rem; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
+.visor-flecha:hover { background: rgba(255,255,255,0.3); }
+.visor-flecha.izq { left: 12px; }
+.visor-flecha.der { right: 12px; }
+.visor-flecha:disabled { opacity: 0; pointer-events: none; }
+
+.visor-dots { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 10; }
+.visor-dots button { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.4); border: none; cursor: pointer; padding: 0; transition: background 0.15s, transform 0.15s; }
+.visor-dots button.activo { background: var(--amarillo); transform: scale(1.25); }
+
+@media (max-width: 480px) {
+  .visor-slide { padding: 0 14px; }
+  .visor-flecha { width: 38px; height: 38px; font-size: 1.1rem; }
+  .visor-flecha.izq { left: 4px; }
+  .visor-flecha.der { right: 4px; }
+}
+
+@media (max-width: 480px) {
+  .productos-grid { grid-template-columns: repeat(2, 1fr); gap: 11px; padding: 10px 13px 24px; }
+  .categorias, .buscador-wrap { padding-left: 13px; padding-right: 13px; }
+  .seccion-titulo { padding-left: 13px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><img src="https://t2.pixhost.to/thumbs/8904/743344962_1751227755908.jpg" style="height:38px;border-radius:6px"> <span>Librería</span> Maxiplus</div>
+  <button class="carrito-btn" onclick="toggleCarrito()">
+    🛒 Carrito <span class="carrito-count" id="carritoCount">0</span>
+  </button>
+</header>
+
+<div class="hero">
+  <div class="hero-badge">✨ Todo para tu regreso a clases</div>
+  <h1>Librería Maxiplus</h1>
+  <p>Materiales escolares de calidad al mejor precio.</p>
+</div>
+
+<div class="buscador-wrap">
+  <div class="buscador-inner">
+    <span>🔍</span>
+    <input class="buscador-input" id="buscadorInput" type="text"
+      placeholder="Buscar por nombre o código (ej: 100001)..."
+      oninput="buscar(this.value)">
+    <button class="buscador-clear" id="buscadorClear" onclick="limpiarBusqueda()">✕</button>
+  </div>
+</div>
+
+<div class="categorias" id="categoriasWrap">
+  <button class="cat-btn active" data-cat="todos" onclick="filtrar('todos',this)">📦 Todos</button>
+</div>
+
+<div class="seccion-titulo" id="seccionTitulo">🛍️ Nuestros Productos</div>
+<div class="productos-grid" id="productosGrid"></div>
+
+<div class="overlay" id="overlay" onclick="toggleCarrito()"></div>
+
+<div class="carrito-panel" id="carritoPanel">
+  <div class="carrito-header">
+    <h2>🛒 Mi Carrito</h2>
+    <button class="cerrar-btn" onclick="toggleCarrito()">✕</button>
+  </div>
+  <div class="carrito-items" id="carritoItems">
+    <div class="carrito-vacio">
+      <div class="icono">🛒</div>
+      <p>Tu carrito está vacío</p>
+      <p style="font-size:0.8rem;margin-top:4px;font-weight:400">¡Agrega productos para comenzar!</p>
+    </div>
+  </div>
+  <div class="carrito-footer">
+    <div id="bannerQr" class="banner-qr">
+      💳 <strong>¡Descuento por pago QR!</strong><br>
+      <span id="bannerQrTexto"></span>
+    </div>
+    <div class="total-row">
+      <span class="total-label">Total efectivo:</span>
+      <span class="total-monto" id="totalMonto">Bs. 0.00</span>
+    </div>
+    <div class="total-row" id="filaTotalQr" style="display:none">
+      <span class="total-label" style="color:#16a34a;font-weight:800;">Total QR:</span>
+      <span class="total-monto" id="totalMontoQr" style="color:#16a34a;">Bs. 0.00</span>
+    </div>
+    <button class="pedir-btn" onclick="pedirWhatsApp()">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Enviar pedido por WhatsApp
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="flotantes-wrap">
+  <a class="boton-flotante boton-extra" id="botonExtra" href="#" target="_blank" title="Próximamente" style="display:none;">
+    <span>🔗</span>
+  </a>
+  <a class="boton-flotante boton-whatsapp-chat" href="https://wa.me/59174470535?text=Hola%2C%20tengo%20una%20consulta" target="_blank" title="Chatear con Librería Maxiplus">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+  </a>
+</div>
+
+<div class="visor-overlay" id="visorOverlay" onclick="if(event.target===this) cerrarVisor()">
+  <button class="visor-cerrar" onclick="cerrarVisor()">✕</button>
+  <div class="visor-contador" id="visorContador">1 / 1</div>
+  <button class="visor-flecha izq" id="visorFlechaIzq" onclick="visorMover(-1)">‹</button>
+  <div class="visor-track-wrap">
+    <div class="visor-track" id="visorTrack"></div>
+  </div>
+  <button class="visor-flecha der" id="visorFlechaDer" onclick="visorMover(1)">›</button>
+  <div class="visor-dots" id="visorDots"></div>
+</div>
+
+<!-- Tira de tiendas hermanas -->
+<div class="tiendas-strip">
+  <a class="tienda-btn activa" href="index.html">📚 Librería Maxiplus</a>
+  <a class="tienda-btn" href="plasticos.html">🔧 Plásticos y Herramientas</a>
+  <span class="tienda-btn deshabilitada">🛒 Supermercado (próximo)</span>
+</div>
+
+<footer>
+  <strong>Librería Maxiplus</strong> — Materiales escolares de calidad<br>
+  <span style="font-size:0.78rem">© 2026 · Hecho con ❤️</span>
+</footer>
+
+<!-- Modal buscador de pedidos -->
+<div class="modal-pedido-overlay" id="modalPedidoOverlay" onclick="if(event.target===this)cerrarModalPedido()">
+  <div class="modal-pedido-card">
+    <div class="modal-pedido-header">
+      <h3>🔍 Consultar pedido</h3>
+      <button class="modal-pedido-cerrar" onclick="cerrarModalPedido()">✕</button>
+    </div>
+    <div class="modal-pedido-body">
+      <input class="input-codigo-pedido" id="inputCodigoPedido" type="text" placeholder="Ej: MX-0107-4831" maxlength="15">
+      <button class="btn-buscar-pedido" onclick="buscarPedido()">Buscar pedido</button>
+      <div id="resultadoPedido"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  CONEXIÓN CON SUPABASE — esquema: libreria
+// ============================================================
+var ESQUEMA = "libreria";
+
+var productos = [];
+var cargando = true;
+var errorCarga = false;
+var carrito = [];
+var categoriaActual = 'todos';
+var terminoBusqueda = '';
+
+// Configuración dinámica (viene de Supabase)
+var CFG = {
+  descuento_qr_activo: false,
+  descuento_qr_pct: 10,
+  descuento_qr_minimo: 30,
+  mensaje_whatsapp: '¡Hola! Quiero hacer el siguiente pedido en *Librería Maxiplus* 🛍️',
+  whatsapp_numero: '59174470535'
+};
+
+function esUrl(s) { return s && (s.indexOf('http') === 0 || s.indexOf('data:') === 0); }
+
+// Devuelve siempre un array de imágenes, sin importar si el producto
+// usa el campo viejo "imagen" (uno solo) o el nuevo "imagenes" (varios).
+function getImagenes(p) {
+  if (p.imagenes && p.imagenes.length) return p.imagenes;
+  if (p.imagen) return [p.imagen];
+  return ['📦'];
+}
+
+function imgHtml(imagen, grande) {
+  if (esUrl(imagen)) return '<img src="' + imagen + '" alt="producto" loading="lazy">';
+  return '<span style="font-size:' + (grande ? '3rem' : '1.7rem') + '">' + imagen + '</span>';
+}
+
+function stockLabel(s) {
+  if (s === 0) return '<span class="producto-stock" style="color:var(--rojo);font-weight:700">Sin stock</span>';
+  if (s <= 3)  return '<span class="producto-stock bajo">⚠️ Solo quedan ' + s + '</span>';
+  return '<span class="producto-stock">Stock: ' + s + '</span>';
+}
+
+function toggleDetalle(id, btn) {
+  var body = document.getElementById('detalle-' + id);
+  var abierto = body.classList.toggle('abierto');
+  btn.classList.toggle('abierto', abierto);
+  btn.innerHTML = '<span class="detalle-flecha">▼</span> ' + (abierto ? 'Ocultar' : 'Ver detalles');
+}
+
+function renderProductos() {
+  var grid   = document.getElementById('productosGrid');
+  var titulo = document.getElementById('seccionTitulo');
+
+  if (cargando) {
+    grid.innerHTML = '<div class="sin-resultados"><div class="icono">⏳</div><p>Cargando productos...</p></div>';
+    return;
+  }
+  if (errorCarga) {
+    grid.innerHTML = '<div class="sin-resultados"><div class="icono">⚠️</div><p>No se pudo conectar con la tienda</p><p style="font-size:0.8rem;margin-top:4px;font-weight:400">Verifica tu conexión y recarga la página</p></div>';
+    return;
+  }
+
+  var filtrados = categoriaActual === 'todos' ? productos : productos.filter(function(p){ return p.cat === categoriaActual; });
+
+  if (terminoBusqueda) {
+    var t = terminoBusqueda;
+    filtrados = productos.filter(function(p){
+      return p.nombre.toLowerCase().indexOf(t) >= 0 ||
+             p.desc.toLowerCase().indexOf(t) >= 0 ||
+             p.codigo.indexOf(t) >= 0;
+    });
+    titulo.textContent = '🔍 Resultados: "' + terminoBusqueda + '"';
+  } else {
+    titulo.textContent = '🛍️ Nuestros Productos';
+  }
+
+  if (filtrados.length === 0) {
+    grid.innerHTML = '<div class="sin-resultados"><div class="icono">😕</div><p>No se encontraron productos</p></div>';
+    return;
+  }
+
+  var html = '';
+  for (var i = 0; i < filtrados.length; i++) {
+    var p = filtrados[i];
+    var agotado = p.stock === 0;
+    var imgs = getImagenes(p);
+    html += '<div class="producto-card' + (agotado ? ' agotado' : '') + '">';
+    html += '<div class="producto-img" onclick="abrirVisor(' + p.id + ')">';
+    html += imgHtml(imgs[0], true);
+    if (imgs.length > 1) {
+      html += '<div class="producto-img-mini-dots">';
+      for (var d = 0; d < imgs.length; d++) html += '<span></span>';
+      html += '</div>';
+    }
+    html += '<span class="badge-codigo">' + p.codigo + '</span>';
+    if (p.precio_oferta !== null && p.precio_oferta !== undefined) html += '<span class="badge-oferta">OFERTA</span>';
+    if (agotado) html += '<span class="badge-agotado">AGOTADO</span>';
+    html += '</div>';
+    html += '<div class="producto-info">';
+    html += '<div class="producto-codigo">#' + p.codigo + '</div>';
+    html += '<div class="producto-nombre">' + p.nombre + '</div>';
+    html += '<div class="producto-desc">' + p.desc + '</div>';
+    var precioMostrar = (p.precio_oferta !== null && p.precio_oferta !== undefined) ? p.precio_oferta : p.precio;
+    var precioHtml = '';
+    if (p.precio_oferta !== null && p.precio_oferta !== undefined) {
+      precioHtml = '<span class="precio-original">Bs. ' + p.precio.toFixed(2) + '</span><span class="precio-oferta-txt">Bs. ' + p.precio_oferta.toFixed(2) + '</span>';
+    } else {
+      precioHtml = 'Bs. ' + p.precio.toFixed(2);
+    }
+    html += '<div class="producto-precio">' + precioHtml + '</div>';
+    html += stockLabel(p.stock);
+    html += '<button class="detalle-btn" onclick="toggleDetalle(' + p.id + ', this)">';
+    html += '<span class="detalle-flecha">▼</span> Ver detalles</button>';
+    html += '<div class="detalle-body" id="detalle-' + p.id + '">' + p.detalle + '</div>';
+    html += '</div>';
+    html += '<button class="agregar-btn" id="btn-' + p.id + '" onclick="agregarAlCarrito(' + p.id + ')"' + (agotado ? ' disabled' : '') + '>';
+    html += agotado ? 'Sin stock' : '+ Agregar al carrito';
+    html += '</button>';
+    html += '</div>';
+  }
+  grid.innerHTML = html;
+}
+
+function buscar(valor) {
+  // Si el usuario escribe un código de pedido (ej: MX-0107-4831), abre el modal de pedidos
+  if (/^mx-/i.test(valor.trim())) {
+    document.getElementById('inputCodigoPedido').value = valor.trim().toUpperCase();
+    abrirModalPedido();
+    document.getElementById('buscadorInput').value = '';
+    document.getElementById('buscadorClear').style.display = 'none';
+    buscarPedido();
+    return;
+  }
+  terminoBusqueda = valor.trim().toLowerCase();
+  document.getElementById('buscadorClear').style.display = terminoBusqueda ? 'block' : 'none';
+  if (terminoBusqueda) document.querySelectorAll('.cat-btn').forEach(function(b){ b.classList.remove('active'); });
+  renderProductos();
+}
+
+function limpiarBusqueda() {
+  document.getElementById('buscadorInput').value = '';
+  terminoBusqueda = '';
+  document.getElementById('buscadorClear').style.display = 'none';
+  document.querySelectorAll('.cat-btn').forEach(function(b){
+    b.classList.toggle('active', b.getAttribute('data-cat') === categoriaActual);
+  });
+  renderProductos();
+}
+
+function filtrar(cat, btn) {
+  categoriaActual = cat;
+  terminoBusqueda = '';
+  document.getElementById('buscadorInput').value = '';
+  document.getElementById('buscadorClear').style.display = 'none';
+  document.querySelectorAll('.cat-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  renderProductos();
+}
+
+function agregarAlCarrito(id) {
+  var prod = null;
+  for (var i = 0; i < productos.length; i++) { if (productos[i].id === id) { prod = productos[i]; break; } }
+  if (!prod || prod.stock === 0) return;
+
+  var enCarrito = null;
+  for (var j = 0; j < carrito.length; j++) { if (carrito[j].id === id) { enCarrito = carrito[j]; break; } }
+  var cantActual = enCarrito ? enCarrito.cantidad : 0;
+
+  if (cantActual >= prod.stock) { mostrarToast('⚠️ Solo hay ' + prod.stock + ' en stock'); return; }
+
+  if (enCarrito) {
+    enCarrito.cantidad++;
+  } else {
+    var precioCarrito = (prod.precio_oferta !== null && prod.precio_oferta !== undefined) ? prod.precio_oferta : prod.precio;
+    carrito.push({ id: prod.id, nombre: prod.nombre, codigo: prod.codigo, precio: precioCarrito, imagen: getImagenes(prod)[0], cantidad: 1 });
+  }
+
+  actualizarCarrito();
+  mostrarToast('✅ ' + prod.nombre + ' agregado');
+
+  var btn = document.getElementById('btn-' + id);
+  if (btn) {
+    btn.textContent = '✓ Agregado';
+    btn.classList.add('agregado');
+    setTimeout(function(){ btn.textContent = '+ Agregar al carrito'; btn.classList.remove('agregado'); }, 1200);
+  }
+}
+
+function cambiarCantidadCarrito(id, delta) {
+  var item = null;
+  for (var i = 0; i < carrito.length; i++) { if (carrito[i].id === id) { item = carrito[i]; break; } }
+  if (!item) return;
+  var prod = null;
+  for (var j = 0; j < productos.length; j++) { if (productos[j].id === id) { prod = productos[j]; break; } }
+  var nueva = item.cantidad + delta;
+  if (nueva <= 0) {
+    carrito = carrito.filter(function(i){ return i.id !== id; });
+  } else if (prod && nueva > prod.stock) {
+    mostrarToast('⚠️ Máximo ' + prod.stock + ' disponibles'); return;
+  } else {
+    item.cantidad = nueva;
+  }
+  actualizarCarrito();
+}
+
+function eliminarItem(id) {
+  carrito = carrito.filter(function(i){ return i.id !== id; });
+  actualizarCarrito();
+}
+
+function actualizarCarrito() {
+  var total = 0, count = 0;
+  for (var i = 0; i < carrito.length; i++) { total += carrito[i].precio * carrito[i].cantidad; count += carrito[i].cantidad; }
+  document.getElementById('carritoCount').textContent = count;
+  document.getElementById('totalMonto').textContent = 'Bs. ' + total.toFixed(2);
+
+  // Descuento QR
+  var qrActivo = CFG.descuento_qr_activo && total >= CFG.descuento_qr_minimo;
+  var bannerQr   = document.getElementById('bannerQr');
+  var filaTotalQr = document.getElementById('filaTotalQr');
+  if (qrActivo) {
+    var ahorro     = total * (CFG.descuento_qr_pct / 100);
+    var totalQr    = total - ahorro;
+    document.getElementById('bannerQrTexto').innerHTML =
+      'Pagando con QR obtienes un <strong>' + CFG.descuento_qr_pct + '% de descuento</strong>. ' +
+      'Ahorras <span class="ahorro">Bs. ' + ahorro.toFixed(2) + '</span>';
+    document.getElementById('totalMontoQr').textContent = 'Bs. ' + totalQr.toFixed(2);
+    bannerQr.classList.add('visible');
+    filaTotalQr.style.display = 'flex';
+  } else {
+    bannerQr.classList.remove('visible');
+    filaTotalQr.style.display = 'none';
+  }
+
+  var div = document.getElementById('carritoItems');
+  if (carrito.length === 0) {
+    div.innerHTML = '<div class="carrito-vacio"><div class="icono">🛒</div><p>Tu carrito está vacío</p><p style="font-size:0.8rem;margin-top:4px;font-weight:400">¡Agrega productos para comenzar!</p></div>';
+    return;
+  }
+  var html = '';
+  for (var j = 0; j < carrito.length; j++) {
+    var it = carrito[j];
+    html += '<div class="carrito-item">';
+    html += '<div class="carrito-item-img">' + imgHtml(it.imagen, false) + '</div>';
+    html += '<div class="carrito-item-info">';
+    html += '<div class="carrito-item-nombre">' + it.nombre + '</div>';
+    html += '<div class="carrito-item-cod">#' + it.codigo + '</div>';
+    html += '<div class="carrito-item-precio">Bs. ' + (it.precio * it.cantidad).toFixed(2) + '</div>';
+    html += '<div class="cantidad-ctrl">';
+    html += '<button class="cantidad-btn" onclick="cambiarCantidadCarrito(' + it.id + ',-1)">−</button>';
+    html += '<span class="cantidad-num">' + it.cantidad + '</span>';
+    html += '<button class="cantidad-btn" onclick="cambiarCantidadCarrito(' + it.id + ',1)">+</button>';
+    html += '</div></div>';
+    html += '<button class="eliminar-item" onclick="eliminarItem(' + it.id + ')">🗑️</button>';
+    html += '</div>';
+  }
+  div.innerHTML = html;
+}
+
+function toggleCarrito() {
+  document.getElementById('carritoPanel').classList.toggle('abierto');
+  document.getElementById('overlay').classList.toggle('activo');
+}
+
+// Genera un número de pedido corto y único, fácil de leer y de buscar
+// en el chat de WhatsApp, para no mezclar pedidos de distintos clientes.
+function generarNumeroPedido() {
+  var fecha = new Date();
+  var dd = String(fecha.getDate()).padStart(2, '0');
+  var mm = String(fecha.getMonth() + 1).padStart(2, '0');
+  var aleatorio = Math.floor(1000 + Math.random() * 9000); // 4 dígitos
+  return 'MX-' + dd + mm + '-' + aleatorio;
+}
+
+function pedirWhatsApp() {
+  if (carrito.length === 0) { mostrarToast('⚠️ Tu carrito está vacío'); return; }
+
+  var btn = document.querySelector('.pedir-btn');
+  if (btn.disabled) return;
+  var textoOriginal = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = 'Verificando stock...';
+
+  var total = 0;
+  for (var x = 0; x < carrito.length; x++) total += carrito[x].precio * carrito[x].cantidad;
+
+  var qrActivo    = CFG.descuento_qr_activo && total >= CFG.descuento_qr_minimo;
+  var descuentoQr = qrActivo ? parseFloat((total * CFG.descuento_qr_pct / 100).toFixed(2)) : 0;
+  var totalFinal  = parseFloat((total - descuentoQr).toFixed(2));
+  var numeroPedido = generarNumeroPedido();
+  var items = carrito.map(function(it){ return { id: it.id, cantidad: it.cantidad }; });
+
+  API.comprar(ESQUEMA, items, numeroPedido, descuentoQr, totalFinal, total)
+    .then(function(data) {
+      btn.disabled = false;
+      btn.innerHTML = textoOriginal;
+      if (!data.ok) {
+        mostrarToast('⚠️ ' + (data.error || 'No se pudo procesar'));
+        if (data.detalles && data.detalles.length) alert('No se pudo completar:\n\n' + data.detalles.join('\n'));
+        cargarProductos();
+        return;
+      }
+      productos = data.productos;
+
+      var lineas = '';
+      for (var i = 0; i < carrito.length; i++) {
+        var it = carrito[i];
+        lineas += '• [' + it.codigo + '] ' + it.nombre + ' x' + it.cantidad + ' = Bs. ' + (it.precio * it.cantidad).toFixed(2) + '\n';
+      }
+      var msg = CFG.mensaje_whatsapp + '\n\n' +
+        '🧾 *Pedido N° ' + numeroPedido + '*\n\n' + lineas +
+        '\n💵 *Total en efectivo: Bs. ' + total.toFixed(2) + '*';
+      if (qrActivo) {
+        msg += '\n💳 *Total pagando por QR: Bs. ' + totalFinal.toFixed(2) +
+               '* (' + CFG.descuento_qr_pct + '% desc. = Bs. ' + descuentoQr.toFixed(2) + ' de ahorro)';
+      }
+      msg += '\n\n¿Está disponible?';
+
+      window.open('https://wa.me/' + CFG.whatsapp_numero + '?text=' + encodeURIComponent(msg), '_blank');
+      carrito = [];
+      actualizarCarrito();
+      renderProductos();
+      toggleCarrito();
+      mostrarToast('📦 Pedido ' + numeroPedido + ' enviado. ¡Gracias!');
+    })
+    .catch(function(err) {
+      console.error(err);
+      btn.disabled = false;
+      btn.innerHTML = textoOriginal;
+      mostrarToast('⚠️ Error de conexión, intenta de nuevo');
+    });
+}
+
+function mostrarToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 2200);
+}
+
+/* ============================================================
+   VISOR DE IMÁGENES (lightbox con deslizador izquierda/derecha)
+   ============================================================ */
+var visorImgs = [];
+var visorIndice = 0;
+var visorArrastreX = 0;
+var visorArrastrando = false;
+var visorInicioX = 0;
+
+function abrirVisor(id) {
+  var prod = null;
+  for (var i = 0; i < productos.length; i++) { if (productos[i].id === id) { prod = productos[i]; break; } }
+  if (!prod) return;
+  visorImgs = getImagenes(prod);
+  visorIndice = 0;
+  renderVisorTrack();
+  document.getElementById('visorOverlay').classList.add('activo');
+  document.body.style.overflow = 'hidden';
+}
+
+function cerrarVisor() {
+  document.getElementById('visorOverlay').classList.remove('activo');
+  document.body.style.overflow = '';
+}
+
+function renderVisorTrack() {
+  var track = document.getElementById('visorTrack');
+  var dots = document.getElementById('visorDots');
+  var html = '';
+  for (var i = 0; i < visorImgs.length; i++) {
+    html += '<div class="visor-slide">';
+    if (esUrl(visorImgs[i])) {
+      html += '<img src="' + visorImgs[i] + '" alt="producto ampliado">';
+    } else {
+      html += '<span class="emoji-grande">' + visorImgs[i] + '</span>';
+    }
+    html += '</div>';
+  }
+  track.innerHTML = html;
+
+  if (visorImgs.length > 1) {
+    var dotsHtml = '';
+    for (var d = 0; d < visorImgs.length; d++) {
+      dotsHtml += '<button class="' + (d === visorIndice ? 'activo' : '') + '" onclick="visorIrA(' + d + ')"></button>';
+    }
+    dots.innerHTML = dotsHtml;
+    dots.style.display = 'flex';
+  } else {
+    dots.innerHTML = '';
+    dots.style.display = 'none';
+  }
+
+  document.getElementById('visorContador').textContent = (visorIndice + 1) + ' / ' + visorImgs.length;
+  document.getElementById('visorContador').style.display = visorImgs.length > 1 ? 'block' : 'none';
+  document.getElementById('visorFlechaIzq').style.display = visorImgs.length > 1 ? 'flex' : 'none';
+  document.getElementById('visorFlechaDer').style.display = visorImgs.length > 1 ? 'flex' : 'none';
+
+  posicionarVisorTrack(true);
+}
+
+function posicionarVisorTrack(conTransicion) {
+  var track = document.getElementById('visorTrack');
+  track.classList.toggle('sin-transicion', !conTransicion);
+  track.style.transform = 'translateX(' + (-visorIndice * 100) + '%)';
+}
+
+function visorMover(delta) {
+  var nuevo = visorIndice + delta;
+  if (nuevo < 0 || nuevo >= visorImgs.length) return;
+  visorIndice = nuevo;
+  actualizarVisorTras();
+}
+
+function visorIrA(i) {
+  visorIndice = i;
+  actualizarVisorTras();
+}
+
+function actualizarVisorTras() {
+  posicionarVisorTrack(true);
+  document.getElementById('visorContador').textContent = (visorIndice + 1) + ' / ' + visorImgs.length;
+  var dotsBtns = document.querySelectorAll('#visorDots button');
+  dotsBtns.forEach(function(b, idx){ b.classList.toggle('activo', idx === visorIndice); });
+}
+
+// --- Deslizar con el dedo (touch) o con el mouse (drag) ---
+(function () {
+  var wrap = null;
+  function init() {
+    wrap = document.querySelector('.visor-track-wrap');
+    if (!wrap) return;
+    wrap.addEventListener('touchstart', onStart, { passive: true });
+    wrap.addEventListener('touchmove', onMove, { passive: true });
+    wrap.addEventListener('touchend', onEnd);
+    wrap.addEventListener('mousedown', onStart);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onEnd);
+  }
+  function getX(e) { return e.touches ? e.touches[0].clientX : e.clientX; }
+  function onStart(e) {
+    if (visorImgs.length <= 1) return;
+    visorArrastrando = true;
+    visorInicioX = getX(e);
+    visorArrastreX = 0;
+    document.getElementById('visorTrack').classList.add('sin-transicion');
+  }
+  function onMove(e) {
+    if (!visorArrastrando) return;
+    visorArrastreX = getX(e) - visorInicioX;
+    var pct = (-visorIndice * 100) + (visorArrastreX / wrap.clientWidth * 100);
+    document.getElementById('visorTrack').style.transform = 'translateX(' + pct + '%)';
+  }
+  function onEnd() {
+    if (!visorArrastrando) return;
+    visorArrastrando = false;
+    var umbral = 60;
+    if (visorArrastreX < -umbral && visorIndice < visorImgs.length - 1) {
+      visorIndice++;
+    } else if (visorArrastreX > umbral && visorIndice > 0) {
+      visorIndice--;
+    }
+    visorArrastreX = 0;
+    actualizarVisorTras();
+  }
+  if (document.readyState === 'complete' || document.readyState === 'interactive') init();
+  else document.addEventListener('DOMContentLoaded', init);
+})();
+
+// --- Teclado: flechas para moverse, Escape para cerrar ---
+document.addEventListener('keydown', function (e) {
+  if (!document.getElementById('visorOverlay').classList.contains('activo')) return;
+  if (e.key === 'Escape') cerrarVisor();
+  else if (e.key === 'ArrowLeft') visorMover(-1);
+  else if (e.key === 'ArrowRight') visorMover(1);
+});
+
+/* ============================================================
+   CARGA DE PRODUCTOS DESDE GOOGLE SHEETS (base de datos real)
+   ============================================================ */
+function cargarProductos() {
+  cargando = true;
+  errorCarga = false;
+  renderProductos();
+
+  API.listar(ESQUEMA)
+    .then(function(data) {
+      productos = data.productos;
+      var cfg   = data.config;
+      CFG.descuento_qr_activo = !!cfg.descuento_qr_activo;
+      CFG.descuento_qr_pct    = Number(cfg.descuento_qr_pct)    || 10;
+      CFG.descuento_qr_minimo = Number(cfg.descuento_qr_minimo) || 30;
+      CFG.mensaje_whatsapp    = cfg.mensaje_whatsapp || CFG.mensaje_whatsapp;
+      CFG.whatsapp_numero     = cfg.whatsapp_numero  || CFG.whatsapp_numero;
+      cargando = false;
+      renderCategorias();
+      renderProductos();
+      actualizarCarrito();
+    })
+    .catch(function(err) {
+      console.error('Error cargando productos:', err);
+      cargando = false;
+      errorCarga = true;
+      renderProductos();
+    });
+}
+
+/* ── Buscador de pedidos ────────────────────────────────── */
+function abrirModalPedido() {
+  document.getElementById('inputCodigoPedido').value = '';
+  document.getElementById('resultadoPedido').innerHTML = '';
+  document.getElementById('modalPedidoOverlay').classList.add('activo');
+  setTimeout(function(){ document.getElementById('inputCodigoPedido').focus(); }, 100);
+}
+
+function cerrarModalPedido() {
+  document.getElementById('modalPedidoOverlay').classList.remove('activo');
+}
+
+function buscarPedido() {
+  var codigo = document.getElementById('inputCodigoPedido').value.trim().toUpperCase();
+  if (!codigo) return;
+  var div = document.getElementById('resultadoPedido');
+  div.innerHTML = '<p style="text-align:center;color:#6b7280;font-size:0.85rem">Buscando...</p>';
+
+  API.buscarPedido(ESQUEMA, codigo)
+    .then(function(data) {
+      if (!data.ok) { div.innerHTML = '<p class="error-pedido">❌ ' + (data.error || 'No encontrado') + '</p>'; return; }
+      var ped = data.pedido;
+      var estadoClass = ped.estado || 'pendiente';
+      var html = '<div class="resultado-pedido">';
+      html += '<span class="estado-badge ' + estadoClass + '">' + estadoClass.toUpperCase() + '</span>';
+      html += '<p style="font-size:0.78rem;color:#6b7280;margin-bottom:10px">📅 ' + new Date(ped.creado_en).toLocaleString('es-BO') + '</p>';
+      (ped.items || []).forEach(function(it) {
+        html += '<div class="item-pedido"><span>' + it.nombre + ' x' + it.cantidad + '</span><span>Bs. ' + Number(it.subtotal).toFixed(2) + '</span></div>';
+      });
+      html += '<div class="total-pedido"><span>Total efectivo</span><span>Bs. ' + Number(ped.total).toFixed(2) + '</span></div>';
+      if (ped.descuento_qr > 0) {
+        html += '<div class="total-pedido" style="color:#16a34a"><span>Total con QR</span><span>Bs. ' + Number(ped.total_final).toFixed(2) + '</span></div>';
+      }
+      html += '</div>';
+      div.innerHTML = html;
+    })
+    .catch(function(){ div.innerHTML = '<p class="error-pedido">⚠️ Error de conexión</p>'; });
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && document.getElementById('modalPedidoOverlay').classList.contains('activo')) buscarPedido();
+});
+
+// Iconos para categorías conocidas
+var ICONOS_CATEGORIA = {
+  escritura: '✏️', papeleria: '📄', arte: '🎨',
+  mochilas: '🎒', tecnologia: '💻',
+  plasticos: '🪣', limpieza: '🧹', herramientas: '🔧',
+  seguridad: '🦺', pintura: '🎨', fontaneria: '🔩'
+};
+
+function capitalizar(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+
+function renderCategorias() {
+  var wrap = document.getElementById('categoriasWrap');
+  var vistas = {}, categorias = [];
+  productos.forEach(function(p) { if (p.cat && !vistas[p.cat]) { vistas[p.cat]=true; categorias.push(p.cat); } });
+  categorias.sort();
+  var html = '<button class="cat-btn' + (categoriaActual==='todos'?' active':'') + '" data-cat="todos" onclick="filtrar(\'todos\',this)">📦 Todos</button>';
+  categorias.forEach(function(cat) {
+    var icono = ICONOS_CATEGORIA[cat] || '🏷️';
+    html += '<button class="cat-btn' + (categoriaActual===cat?' active':'') + '" data-cat="' + cat + '" onclick="filtrar(\'' + cat + '\',this)">' + icono + ' ' + capitalizar(cat) + '</button>';
+  });
+  wrap.innerHTML = html;
+}
+
+cargarProductos();
+</script>
+</body>
+</html>
