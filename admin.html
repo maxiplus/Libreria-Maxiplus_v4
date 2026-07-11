@@ -134,6 +134,39 @@ header.admin-header h1 span{background:var(--amarillo);color:var(--texto);border
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .sin-datos{text-align:center;padding:30px;color:var(--gris);font-size:.88rem;}
 @media(max-width:700px){.fila-prod{grid-template-columns:40px 1fr 65px 120px;}.fila-prod .costo-prod,.fila-prod .precio-prod{display:none;}.balance-grid{grid-template-columns:1fr;}}
+
+.precio-hero{background:white;border-radius:14px;padding:20px;margin-bottom:18px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+.tc-display{font-family:'Nunito',sans-serif;font-weight:900;font-size:2.2rem;color:var(--verde);}
+.tc-sub{font-size:.78rem;color:var(--gris);margin-top:2px;}
+.tc-input-wrap{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.tc-input-wrap input{padding:10px 14px;border:1.5px solid var(--borde);border-radius:9px;font-size:1rem;font-family:'Nunito',sans-serif;font-weight:700;width:130px;}
+.btn-recalcular{background:var(--verde);color:white;border:none;border-radius:9px;padding:10px 18px;font-family:'Nunito',sans-serif;font-weight:800;font-size:.9rem;cursor:pointer;}
+.btn-recalcular:hover{background:var(--verde-oscuro);}
+.modo-margen-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.modo-tab{padding:8px 16px;border:2px solid var(--borde);border-radius:8px;background:white;font-family:'Nunito',sans-serif;font-weight:700;font-size:.82rem;cursor:pointer;color:var(--gris);}
+.modo-tab.activo{border-color:var(--verde);color:var(--verde);background:var(--verde-claro);}
+.panel-modo{display:none;}
+.panel-modo.activo{display:block;}
+.margenes-tabla{width:100%;border-collapse:collapse;font-size:.83rem;}
+.margenes-tabla th{background:var(--gris-claro);padding:8px 10px;text-align:left;font-weight:700;font-size:.75rem;color:var(--gris);text-transform:uppercase;}
+.margenes-tabla td{padding:7px 10px;border-bottom:1px solid var(--borde);}
+.margenes-tabla td input{width:100%;padding:5px 8px;border:1px solid var(--borde);border-radius:6px;font-size:.82rem;text-align:right;}
+.margenes-tabla td input:focus{outline:none;border-color:var(--verde);}
+.btn-add-rango{background:var(--gris-claro);border:1.5px dashed var(--borde);border-radius:8px;padding:8px;width:100%;cursor:pointer;font-size:.83rem;color:var(--gris);font-weight:600;margin-top:8px;}
+.preview-cambios{background:white;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-top:16px;}
+.preview-cambios table{width:100%;border-collapse:collapse;font-size:.82rem;}
+.preview-cambios th{background:var(--gris-claro);padding:8px 12px;text-align:left;font-weight:700;color:var(--gris);font-size:.75rem;text-transform:uppercase;}
+.preview-cambios td{padding:8px 12px;border-bottom:1px solid var(--borde);}
+.precio-sube{color:var(--rojo);font-weight:700;}
+.precio-baja{color:var(--verde);font-weight:700;}
+.precio-igual{color:var(--gris);}
+.calculadora-precio{background:var(--verde-claro);border-radius:10px;padding:14px;margin-top:12px;}
+.calculadora-precio h4{font-family:'Nunito',sans-serif;font-weight:800;font-size:.88rem;margin-bottom:10px;color:var(--verde-oscuro);}
+.calc-fila{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
+.calc-fila label{font-size:.8rem;font-weight:600;min-width:120px;}
+.calc-fila input,.calc-fila select{padding:7px 10px;border:1.5px solid var(--borde);border-radius:7px;font-size:.85rem;background:white;}
+.calc-resultado{font-family:'Nunito',sans-serif;font-weight:900;font-size:1.4rem;color:var(--verde);margin-top:8px;}
+.calc-detalle{font-size:.75rem;color:var(--gris);margin-top:2px;}
 </style>
 </head>
 <body>
@@ -164,6 +197,7 @@ header.admin-header h1 span{background:var(--amarillo);color:var(--texto);border
     <button class="nav-btn activo" onclick="irA('balance',this)">📊 Balance</button>
     <button class="nav-btn" onclick="irA('productos',this)">📦 Productos</button>
     <button class="nav-btn" onclick="irA('pedidos',this)">🧾 Pedidos</button>
+    <button class="nav-btn" onclick="irA('precios',this)">💰 Precios</button>
     <button class="nav-btn" onclick="irA('config',this)">⚙️ Configuración</button>
   </nav>
   <div class="contenedor">
@@ -244,6 +278,28 @@ header.admin-header h1 span{background:var(--amarillo);color:var(--texto);border
     </div>
     <div class="modal-body">
       <div class="grupo-form"><label>Nombre</label><input type="text" id="fNombre"></div>
+      <div class="grupo-form">
+        <label>Modo de precio</label>
+        <select id="fModoPrecio" onchange="toggleModoPrecio()">
+          <option value="manual">Manual — precio fijo que editas tú</option>
+          <option value="dinamico">Dinámico — se calcula con el tipo de cambio</option>
+        </select>
+      </div>
+      <div id="camposDinamicos" style="display:none;background:var(--verde-claro);border-radius:10px;padding:12px;margin-bottom:14px;">
+        <div class="fila-2" style="margin-bottom:10px;">
+          <div class="grupo-form" style="margin-bottom:0"><label>Precio compra (Bs.)</label><input type="number" id="fPrecioCompraBs" step="0.01" min="0" placeholder="0.00" oninput="previewPrecioDinamico()"></div>
+          <div class="grupo-form" style="margin-bottom:0"><label>Precio compra (USD) opcional</label><input type="number" id="fPrecioCompraUsd" step="0.0001" min="0" placeholder="0.00"></div>
+        </div>
+        <div class="fila-2">
+          <div class="grupo-form" style="margin-bottom:0"><label>TC al momento de compra</label><input type="number" id="fTcCompra" step="0.01" min="0" placeholder="6.97" oninput="previewPrecioDinamico()"></div>
+          <div class="grupo-form" style="margin-bottom:0"><label>Precio mínimo de venta (Bs.)</label><input type="number" id="fPrecioMinimo" step="0.50" min="0" placeholder="opcional"></div>
+        </div>
+        <div id="previewDinamico" style="margin-top:10px;padding:8px;background:white;border-radius:8px;font-size:.83rem;display:none;">
+          <span style="color:var(--gris)">Precio calculado: </span>
+          <span id="previewDinamicoValor" style="font-family:'Nunito',sans-serif;font-weight:900;color:var(--verde);font-size:1rem;"></span>
+          <span id="previewDinamicoDetalle" style="color:var(--gris);font-size:.75rem;display:block;margin-top:2px;"></span>
+        </div>
+      </div>
       <div class="fila-2">
         <div class="grupo-form"><label>Código</label><input type="text" id="fCodigo"></div>
         <div class="grupo-form">
@@ -293,6 +349,7 @@ function irA(id,btn){
   if(id==='pedidos')cargarPedidos();
   if(id==='balance')cargarBalance();
   if(id==='config')renderConfig();
+  if(id==='precios')cargarSeccionPrecios();
 }
 
 document.getElementById('formLogin').addEventListener('submit',function(e){
@@ -361,9 +418,12 @@ function renderDatalistCategorias(){
 }
 
 function limpiarFormulario(){
-  ['fNombre','fCodigo','fCat','fDesc','fDetalle','fPrecio','fPrecioOferta','fPrecioCosto','fStock']
-    .forEach(function(id){document.getElementById(id).value='';});
+  ['fNombre','fCodigo','fCat','fDesc','fDetalle','fPrecio','fPrecioOferta','fPrecioCosto','fStock',
+   'fModoPrecio','fPrecioCompraBs','fPrecioCompraUsd','fTcCompra','fPrecioMinimo']
+    .forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('listaImagenes').innerHTML='';
+  document.getElementById('camposDinamicos').style.display='none';
+  document.getElementById('previewDinamico').style.display='none';
 }
 function agregarCampoImagen(v){
   var c=document.getElementById('listaImagenes'),f=document.createElement('div');f.className='item-imagen';
@@ -394,6 +454,15 @@ function abrirModalEditar(id){
   document.getElementById('fPrecioOferta').value=(p.precio_oferta!==null&&p.precio_oferta!==undefined)?p.precio_oferta:'';
   document.getElementById('fPrecioCosto').value=p.precio_costo||0;
   document.getElementById('fStock').value=p.stock;
+  // Campos dinámicos
+  var modo = p.modo_precio || 'manual';
+  document.getElementById('fModoPrecio').value = modo;
+  if (p.precio_compra_bs)  document.getElementById('fPrecioCompraBs').value  = p.precio_compra_bs;
+  if (p.precio_compra_usd) document.getElementById('fPrecioCompraUsd').value = p.precio_compra_usd;
+  if (p.tc_compra)         document.getElementById('fTcCompra').value         = p.tc_compra;
+  if (p.precio_minimo)     document.getElementById('fPrecioMinimo').value     = p.precio_minimo;
+  toggleModoPrecio();
+  if (modo === 'dinamico') previewPrecioDinamico();
   var imgs=(p.imagenes&&p.imagenes.length)?p.imagenes:[''];
   imgs.forEach(function(img){agregarCampoImagen(img);});
   document.getElementById('modalOverlay').classList.add('activo');
@@ -416,7 +485,13 @@ function guardarProducto(){
   if(!cat){mostrarToast('⚠️ Categoría obligatoria');return;}
   if(isNaN(precio)||precio<0){mostrarToast('⚠️ Precio inválido');return;}
   if(isNaN(stock)||stock<0){mostrarToast('⚠️ Stock inválido');return;}
-  var p={codigo,nombre,desc,detalle,precio,precio_oferta,precio_costo,stock,cat,imagenes};
+  var modo_precio     = document.getElementById('fModoPrecio').value;
+  var precio_compra_bs  = parseFloat(document.getElementById('fPrecioCompraBs').value)||null;
+  var precio_compra_usd = parseFloat(document.getElementById('fPrecioCompraUsd').value)||null;
+  var tc_compra         = parseFloat(document.getElementById('fTcCompra').value)||null;
+  var precio_minimo     = parseFloat(document.getElementById('fPrecioMinimo').value)||null;
+  var p={codigo,nombre,desc,detalle,precio,precio_oferta,precio_costo,stock,cat,imagenes,
+         modo_precio,precio_compra_bs,precio_compra_usd,tc_compra,precio_minimo};
   var btn=document.getElementById('btnGuardar'),to=btn.textContent;
   btn.disabled=true;btn.textContent='Guardando...';
   var promesa=(editandoId!==null)?ADMIN_API.guardarProducto(ESQUEMA,Object.assign({id:editandoId},p)):ADMIN_API.crearProducto(ESQUEMA,p);
@@ -530,6 +605,237 @@ function guardarConfig(){
     else{mostrarToast('✅ Configuración guardada');var url=cambios.admin_plasticos_url;if(url){var l=document.getElementById('linkPlasticos');l.href=url+'?bypass=1';l.style.display='inline-flex';}}
   })
   .catch(function(e){mostrarToast('⚠️ '+e.message);});
+}
+
+
+/* ── PRECIOS ─────────────────────────────────────────────── */
+var cfgPrecios = null;
+var tcNuevoPendiente = null;
+
+function cargarSeccionPrecios() {
+  PRECIOS_API.cargarConfig(ESQUEMA).then(function(cfg) {
+    cfgPrecios = cfg;
+    // TC display
+    document.getElementById('tcDisplay').textContent = 'Bs. ' + cfg.tc_actual.toFixed(2);
+    document.getElementById('tcFecha').textContent = 'por 1 USD — actualizado: ' + (cfg.tc_fecha ? new Date(cfg.tc_fecha).toLocaleDateString('es-BO') : 'nunca');
+    document.getElementById('tcNuevo').value = cfg.tc_actual;
+    // Redondeo
+    document.getElementById('cfgRedondeo').value = cfg.redondeo;
+    // Curva
+    document.getElementById('curvaMax').value = cfg.curva_margen_max;
+    document.getElementById('curvaMin').value = cfg.curva_margen_min;
+    document.getElementById('curvaRef').value = cfg.curva_costo_ref;
+    document.getElementById('curvaAgr').value = cfg.curva_agresividad;
+    // Margen fijo
+    document.getElementById('margenFijoPct').value = cfg.margen_fijo_pct;
+    // Modo activo
+    cambiarModoMargen(cfg.margen_modo, true);
+    // Tabla de márgenes
+    renderTablaMargenesEdit(cfg.margenes);
+    // Contador de productos dinámicos
+    var count = productos.filter(function(p){ return p.modo_precio === 'dinamico'; }).length;
+    document.getElementById('countDinamicos').textContent = count;
+  }).catch(function(e){ mostrarToast('⚠️ Error cargando config de precios: '+e.message); });
+}
+
+function cambiarModoMargen(modo, silencioso) {
+  ['tabla','curva','fijo'].forEach(function(m) {
+    document.getElementById('tab'+m.charAt(0).toUpperCase()+m.slice(1)).classList.toggle('activo', m===modo);
+    document.getElementById('panel'+m.charAt(0).toUpperCase()+m.slice(1)).classList.toggle('activo', m===modo);
+  });
+  if (!silencioso && cfgPrecios) {
+    cfgPrecios.margen_modo = modo;
+    PRECIOS_API.guardarConfig(ESQUEMA, { margen_modo: modo })
+      .then(function(){ mostrarToast('✅ Modo de margen: '+modo); })
+      .catch(function(e){ mostrarToast('⚠️ '+e.message); });
+  }
+}
+
+function renderTablaMargenesEdit(margenes) {
+  var tbody = document.getElementById('tbodyMargenes');
+  var html = '';
+  (margenes||[]).forEach(function(r, i) {
+    html += '<tr>';
+    html += '<td><input type="number" step="0.01" value="'+r.desde+'" data-idx="'+i+'" data-campo="desde" oninput="calcularPrecioPreview()"></td>';
+    html += '<td><input type="number" step="0.01" value="'+(r.hasta||'')+'" placeholder="sin límite" data-idx="'+i+'" data-campo="hasta" oninput="calcularPrecioPreview()"></td>';
+    html += '<td><input type="number" step="0.5" value="'+r.margen_pct+'" data-idx="'+i+'" data-campo="margen_pct" oninput="calcularPrecioPreview()"></td>';
+    html += '<td><button class="btn-icono eliminar" onclick="eliminarRangoMargen('+i+')">✕</button></td>';
+    html += '</tr>';
+  });
+  tbody.innerHTML = html;
+}
+
+function agregarRangoMargen() {
+  if (!cfgPrecios) return;
+  cfgPrecios.margenes.push({ desde: 0, hasta: null, margen_pct: 50 });
+  renderTablaMargenesEdit(cfgPrecios.margenes);
+}
+
+function eliminarRangoMargen(idx) {
+  if (!cfgPrecios) return;
+  cfgPrecios.margenes.splice(idx, 1);
+  renderTablaMargenesEdit(cfgPrecios.margenes);
+}
+
+function leerMargenesDesdeDom() {
+  var filas = document.querySelectorAll('#tbodyMargenes tr');
+  var margenes = [];
+  filas.forEach(function(fila) {
+    var inputs = fila.querySelectorAll('input');
+    var hasta = inputs[1].value.trim();
+    margenes.push({
+      desde:      parseFloat(inputs[0].value)||0,
+      hasta:      hasta !== '' ? parseFloat(hasta) : null,
+      margen_pct: parseFloat(inputs[2].value)||0
+    });
+  });
+  return margenes;
+}
+
+function guardarMargenes() {
+  var margenes = leerMargenesDesdeDom();
+  margenes.sort(function(a,b){ return a.desde - b.desde; });
+  PRECIOS_API.guardarMargenes(ESQUEMA, margenes)
+    .then(function(){ mostrarToast('✅ Tabla de márgenes guardada'); cfgPrecios.margenes = margenes; })
+    .catch(function(e){ mostrarToast('⚠️ '+e.message); });
+}
+
+function guardarCurva() {
+  PRECIOS_API.guardarConfig(ESQUEMA, {
+    curva_margen_max:  document.getElementById('curvaMax').value,
+    curva_margen_min:  document.getElementById('curvaMin').value,
+    curva_costo_ref:   document.getElementById('curvaRef').value,
+    curva_agresividad: document.getElementById('curvaAgr').value
+  }).then(function(){
+    mostrarToast('✅ Curva guardada');
+    cfgPrecios.curva_margen_max  = parseFloat(document.getElementById('curvaMax').value);
+    cfgPrecios.curva_margen_min  = parseFloat(document.getElementById('curvaMin').value);
+    cfgPrecios.curva_costo_ref   = parseFloat(document.getElementById('curvaRef').value);
+    cfgPrecios.curva_agresividad = parseFloat(document.getElementById('curvaAgr').value);
+  }).catch(function(e){ mostrarToast('⚠️ '+e.message); });
+}
+
+function guardarMargenFijo() {
+  PRECIOS_API.guardarConfig(ESQUEMA, { margen_fijo_pct: document.getElementById('margenFijoPct').value })
+    .then(function(){ mostrarToast('✅ Margen fijo guardado'); })
+    .catch(function(e){ mostrarToast('⚠️ '+e.message); });
+}
+
+function guardarRedondeo() {
+  var val = document.getElementById('cfgRedondeo').value;
+  PRECIOS_API.guardarConfig(ESQUEMA, { redondeo: val })
+    .then(function(){ mostrarToast('✅ Redondeo guardado'); if(cfgPrecios) cfgPrecios.redondeo = val; })
+    .catch(function(e){ mostrarToast('⚠️ '+e.message); });
+}
+
+/* ── Calculadora en tiempo real ─── */
+function calcularPrecioPreview() {
+  if (!cfgPrecios) return;
+  var costo = parseFloat(document.getElementById('calcCosto').value);
+  var modo  = document.getElementById('calcModo').value;
+  if (!costo || costo <= 0) {
+    document.getElementById('calcResultado').style.display = 'none';
+    return;
+  }
+  var cfgTmp = Object.assign({}, cfgPrecios, {
+    margen_modo: modo,
+    margenes: leerMargenesDesdeDom()
+  });
+  var res = PRECIOS_API.calcularPrecioLocal(costo, cfgTmp, null);
+  document.getElementById('calcResultado').style.display = 'block';
+  document.getElementById('calcResultado').textContent = 'Bs. ' + res.precio.toFixed(2);
+  document.getElementById('calcDetalle').textContent =
+    'Margen aplicado: ' + res.margen.toFixed(1) + '% → precio sin redondear: Bs. ' +
+    (costo * (1 + res.margen/100)).toFixed(4);
+}
+
+/* ── Recálculo masivo ─── */
+function previsualizarRecalculo() {
+  var tcVal = parseFloat(document.getElementById('tcNuevo').value);
+  if (!tcVal || tcVal <= 0) { mostrarToast('⚠️ Ingresa un tipo de cambio válido'); return; }
+
+  var dinamicos = productos.filter(function(p){
+    return p.modo_precio === 'dinamico' && p.precio_compra_bs && p.tc_compra;
+  });
+  if (!dinamicos.length) { mostrarToast('⚠️ No hay productos dinámicos con datos de compra'); return; }
+
+  // Calcular localmente para la vista previa
+  var filas = '';
+  dinamicos.forEach(function(p) {
+    var costoNuevo = PRECIOS_API.calcularCostoDinamico(p.precio_compra_bs, p.tc_compra, tcVal);
+    var res = PRECIOS_API.calcularPrecioLocal(costoNuevo, cfgPrecios, p.precio_minimo);
+    var diff = res.precio - p.precio;
+    var cls = diff > 0 ? 'precio-sube' : diff < 0 ? 'precio-baja' : 'precio-igual';
+    var flecha = diff > 0 ? '↑' : diff < 0 ? '↓' : '=';
+    filas += '<tr>';
+    filas += '<td>'+escapeHtml(p.nombre)+'</td>';
+    filas += '<td>Bs. '+Number(p.precio_costo||0).toFixed(2)+'</td>';
+    filas += '<td>Bs. '+costoNuevo.toFixed(2)+'</td>';
+    filas += '<td>Bs. '+Number(p.precio).toFixed(2)+'</td>';
+    filas += '<td class="'+cls+'">'+flecha+' Bs. '+res.precio.toFixed(2)+'</td>';
+    filas += '<td>'+res.margen.toFixed(1)+'%</td>';
+    filas += '</tr>';
+  });
+
+  document.getElementById('tbodyPreview').innerHTML = filas;
+  document.getElementById('secPreviewCambios').style.display = 'block';
+  tcNuevoPendiente = tcVal;
+  document.getElementById('secPreviewCambios').scrollIntoView({ behavior: 'smooth' });
+}
+
+function confirmarRecalculo() {
+  if (!tcNuevoPendiente) return;
+  var btn = document.querySelector('#secPreviewCambios .btn-aprobar');
+  btn.disabled = true; btn.textContent = 'Aplicando...';
+  PRECIOS_API.recalcularTodos(ESQUEMA, tcNuevoPendiente)
+    .then(function() {
+      mostrarToast('✅ Precios actualizados con TC Bs. '+tcNuevoPendiente);
+      document.getElementById('tcDisplay').textContent = 'Bs. '+tcNuevoPendiente.toFixed(2);
+      document.getElementById('tcFecha').textContent = 'por 1 USD — actualizado hoy';
+      cancelarPreview();
+      cargarTodo(); // recargar productos
+    })
+    .catch(function(e){ btn.disabled=false; btn.textContent='✅ Confirmar y aplicar'; mostrarToast('⚠️ '+e.message); });
+}
+
+function cancelarPreview() {
+  document.getElementById('secPreviewCambios').style.display = 'none';
+  tcNuevoPendiente = null;
+}
+
+
+function toggleModoPrecio() {
+  var modo = document.getElementById('fModoPrecio').value;
+  document.getElementById('camposDinamicos').style.display = modo === 'dinamico' ? 'block' : 'none';
+  if (modo === 'dinamico') previewPrecioDinamico();
+}
+
+function previewPrecioDinamico() {
+  if (!cfgPrecios) return;
+  var compraBs = parseFloat(document.getElementById('fPrecioCompraBs').value);
+  var tcCompra = parseFloat(document.getElementById('fTcCompra').value);
+  var minimo   = parseFloat(document.getElementById('fPrecioMinimo').value)||null;
+  var prev     = document.getElementById('previewDinamico');
+
+  if (!compraBs || compraBs <= 0 || !tcCompra || tcCompra <= 0) {
+    prev.style.display = 'none'; return;
+  }
+
+  var tcActual   = cfgPrecios.tc_actual;
+  var costoDin   = PRECIOS_API.calcularCostoDinamico(compraBs, tcCompra, tcActual);
+  var res        = PRECIOS_API.calcularPrecioLocal(costoDin, cfgPrecios, minimo);
+
+  // Actualizar también el campo de precio y costo automáticamente
+  document.getElementById('fPrecio').value     = res.precio.toFixed(2);
+  document.getElementById('fPrecioCosto').value = costoDin.toFixed(2);
+
+  document.getElementById('previewDinamicoValor').textContent =
+    'Bs. ' + res.precio.toFixed(2);
+  document.getElementById('previewDinamicoDetalle').textContent =
+    'Costo dinámico: Bs. ' + costoDin.toFixed(2) +
+    ' · Margen: ' + res.margen.toFixed(1) + '%' +
+    ' · TC actual: ' + tcActual.toFixed(2);
+  prev.style.display = 'block';
 }
 
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.getElementById('modalOverlay').classList.contains('activo'))cerrarModal();});

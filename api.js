@@ -54,7 +54,12 @@ function normProd(p) {
     cat:          p.cat,
     imagenes:     imgs ? imgs.split(",").map(function(s){ return s.trim(); }) : [],
     precio_costo: Number(p.precio_costo||0),
-    precio_oferta:(p.precio_oferta!==null&&p.precio_oferta!==undefined) ? Number(p.precio_oferta) : null
+    precio_oferta:     (p.precio_oferta!==null&&p.precio_oferta!==undefined) ? Number(p.precio_oferta) : null,
+    modo_precio:       p.modo_precio||'manual',
+    precio_compra_bs:  p.precio_compra_bs ? Number(p.precio_compra_bs) : null,
+    precio_compra_usd: p.precio_compra_usd ? Number(p.precio_compra_usd) : null,
+    tc_compra:         p.tc_compra ? Number(p.tc_compra) : null,
+    precio_minimo:     p.precio_minimo ? Number(p.precio_minimo) : null
   };
 }
 
@@ -170,7 +175,12 @@ var ADMIN_API = {
       precio:p.precio, stock:p.stock, cat:p.cat,
       imagenes:(p.imagenes||[]).join(","),
       precio_costo:p.precio_costo||0,
-      precio_oferta:(p.precio_oferta!==""&&p.precio_oferta!==null&&p.precio_oferta!==undefined)?p.precio_oferta:null
+      precio_oferta:(p.precio_oferta!==""&&p.precio_oferta!==null&&p.precio_oferta!==undefined)?p.precio_oferta:null,
+      modo_precio:       p.modo_precio||'manual',
+      precio_compra_bs:  p.precio_compra_bs||null,
+      precio_compra_usd: p.precio_compra_usd||null,
+      tc_compra:         p.tc_compra||null,
+      precio_minimo:     p.precio_minimo||null
     }, true).then(function(){ return ADMIN_API.listarProductos(esquema); });
   },
 
@@ -181,7 +191,12 @@ var ADMIN_API = {
       precio:p.precio, stock:p.stock, cat:p.cat,
       imagenes:(p.imagenes||[]).join(","),
       precio_costo:p.precio_costo||0,
-      precio_oferta:(p.precio_oferta!==""&&p.precio_oferta!==null&&p.precio_oferta!==undefined)?p.precio_oferta:null
+      precio_oferta:(p.precio_oferta!==""&&p.precio_oferta!==null&&p.precio_oferta!==undefined)?p.precio_oferta:null,
+      modo_precio:       p.modo_precio||'manual',
+      precio_compra_bs:  p.precio_compra_bs||null,
+      precio_compra_usd: p.precio_compra_usd||null,
+      tc_compra:         p.tc_compra||null,
+      precio_minimo:     p.precio_minimo||null
     }, true).then(function(){ return ADMIN_API.listarProductos(esquema); });
   },
 
@@ -264,5 +279,119 @@ var ADMIN_API = {
     return Promise.all(Object.keys(cambios).map(function(clave){
       return sPatch("/"+pr+"config?clave=eq."+encodeURIComponent(clave), {valor:String(cambios[clave])}, true);
     }));
+  }
+};
+
+/* ============================================================
+   MÓDULO DE PRECIOS — funciones para el sistema dinámico
+   ============================================================ */
+var PRECIOS_API = {
+
+  // Cargar toda la configuración de precios + márgenes
+  cargarConfig: function(esquema) {
+    var p = pfx(esquema);
+    return Promise.all([
+      sGet("/"+p+"config_precios?select=clave,valor", true),
+      sGet("/"+p+"margenes?order=desde.asc", true)
+    ]).then(function(res) {
+      var cfg = {};
+      (res[0]||[]).forEach(function(r){ cfg[r.clave] = r.valor; });
+      return {
+        tc_actual:         parseFloat(cfg.tc_actual || 6.97),
+        tc_fecha:          cfg.tc_fecha || '',
+        redondeo:          cfg.redondeo || 'medio',
+        margen_modo:       cfg.margen_modo || 'tabla',
+        margen_fijo_pct:   parseFloat(cfg.margen_fijo_pct || 50),
+        curva_margen_max:  parseFloat(cfg.curva_margen_max || 200),
+        curva_margen_min:  parseFloat(cfg.curva_margen_min || 20),
+        curva_costo_ref:   parseFloat(cfg.curva_costo_ref || 5),
+        curva_agresividad: parseFloat(cfg.curva_agresividad || 0.45),
+        margenes:          res[1] || []
+      };
+    });
+  },
+
+  // Guardar configuración de precios
+  guardarConfig: function(esquema, cambios) {
+    var p = pfx(esquema);
+    return Promise.all(Object.keys(cambios).map(function(clave) {
+      return sPatch("/"+p+"config_precios?clave=eq."+encodeURIComponent(clave),
+        { valor: String(cambios[clave]) }, true);
+    }));
+  },
+
+  // Guardar tabla de márgenes completa (borra y recrea)
+  guardarMargenes: function(esquema, margenes) {
+    var p = pfx(esquema);
+    // 1) Borrar todos los rangos actuales
+    return fetch(SUPA_URL+"/rest/v1/"+p+"margenes?id=gte.0",
+      { method:"DELETE", headers:hdr(true) })
+    .then(function() {
+      // 2) Insertar los nuevos
+      return sPost("/"+p+"margenes", margenes, true);
+    });
+  },
+
+  // Calcular precio en el navegador (sin llamar a Supabase)
+  // Replica la misma lógica que la función SQL
+  calcularPrecioLocal: function(costo, cfg, precioMinimo) {
+    if (!costo || costo <= 0) return 0;
+
+    var margen = 0;
+
+    if (cfg.margen_modo === 'fijo') {
+      margen = cfg.margen_fijo_pct;
+
+    } else if (cfg.margen_modo === 'curva') {
+      var max = cfg.curva_margen_max;
+      var min = cfg.curva_margen_min;
+      var ref = cfg.curva_costo_ref;
+      var agr = cfg.curva_agresividad;
+      margen = min + (max - min) * Math.pow(ref / costo, agr);
+      margen = Math.max(min, Math.min(max, margen));
+
+    } else { // tabla
+      var rangos = cfg.margenes || [];
+      for (var i = 0; i < rangos.length; i++) {
+        var r = rangos[i];
+        if (costo >= r.desde && (r.hasta === null || costo <= r.hasta)) {
+          margen = parseFloat(r.margen_pct);
+          break;
+        }
+      }
+      if (!margen) margen = 20;
+    }
+
+    var precioRaw = costo * (1 + margen / 100);
+    var unidad    = cfg.redondeo === 'entero' ? 1.0 : 0.5;
+    var precioFin = Math.ceil(precioRaw / unidad) * unidad;
+
+    if (precioMinimo && precioFin < precioMinimo) precioFin = precioMinimo;
+
+    return { precio: precioFin, margen: Math.round(margen * 100) / 100 };
+  },
+
+  // Calcular costo dinámico con protección de capital
+  calcularCostoDinamico: function(precioCompraBs, tcCompra, tcActual) {
+    if (!precioCompraBs || !tcCompra || tcCompra <= 0) return precioCompraBs || 0;
+    var costoAjustado = precioCompraBs * (tcActual / tcCompra);
+    return Math.max(precioCompraBs, costoAjustado); // nunca baja del costo original
+  },
+
+  // Recálculo masivo usando la función SQL de Supabase
+  // Devuelve la lista de cambios para mostrar vista previa
+  recalcularTodos: function(esquema, tcNuevo) {
+    return fetch(SUPA_URL+"/rest/v1/rpc/recalcular_precios_dinamicos", {
+      method:  "POST",
+      headers: hdr(true),
+      body:    JSON.stringify({ p_tc_nuevo: tcNuevo })
+    }).then(function(r) {
+      return r.ok ? r.json() : r.json().then(function(e){ throw new Error(e.message||JSON.stringify(e)); });
+    });
+  },
+
+  // Vista de resumen de precios (para la tabla del admin)
+  vistaPrecios: function(esquema) {
+    return sGet("/lib_vista_precios?order=id.asc", true);
   }
 };
