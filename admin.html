@@ -228,6 +228,109 @@ header.admin-header h1 span{background:var(--amarillo);color:var(--texto);border
       <div class="pedidos-lista" id="listaPedidos"></div>
     </div>
 
+
+    <!-- ── PRECIOS ── -->
+    <div class="seccion" id="sec-precios">
+
+      <div class="precio-hero">
+        <div>
+          <div class="tc-display" id="tcDisplay">Bs. 6.97</div>
+          <div class="tc-sub" id="tcFecha">por 1 USD — actualizando...</div>
+        </div>
+        <div class="tc-input-wrap">
+          <input type="number" id="tcNuevo" step="0.01" min="1" placeholder="Nuevo TC">
+          <button class="btn-recalcular" onclick="previsualizarRecalculo()">🔄 Recalcular precios</button>
+        </div>
+        <div style="margin-left:auto;text-align:right;">
+          <div style="font-size:.8rem;color:var(--gris);margin-bottom:4px">Productos dinámicos</div>
+          <div id="countDinamicos" style="font-family:Nunito,sans-serif;font-weight:900;font-size:1.4rem;color:var(--azul)">0</div>
+        </div>
+      </div>
+
+      <div id="secPreviewCambios" style="display:none;margin-bottom:18px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:10px;">
+          <span style="font-family:Nunito,sans-serif;font-weight:800;font-size:.95rem;">Vista previa de cambios</span>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-aprobar" id="btnConfirmarRecalculo" onclick="confirmarRecalculo()">✅ Confirmar y aplicar</button>
+            <button class="btn-devolver" onclick="cancelarPreview()">✕ Cancelar</button>
+          </div>
+        </div>
+        <div class="preview-cambios">
+          <table>
+            <thead><tr><th>Producto</th><th>Costo antes</th><th>Costo nuevo</th><th>Precio antes</th><th>Precio nuevo</th><th>Margen</th></tr></thead>
+            <tbody id="tbodyPreview"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="config-seccion">
+        <h3>🧮 Calculadora de precio</h3>
+        <div class="calculadora-precio">
+          <h4>Simula el precio de venta dado un costo</h4>
+          <div class="calc-fila">
+            <label>Costo en Bs.</label>
+            <input type="number" id="calcCosto" step="0.01" min="0" placeholder="0.00" oninput="calcularPrecioPreview()">
+          </div>
+          <div class="calc-fila">
+            <label>Modo de margen</label>
+            <select id="calcModo" onchange="calcularPrecioPreview()">
+              <option value="tabla">Tabla escalonada</option>
+              <option value="curva">Curva continua</option>
+              <option value="fijo">Margen fijo</option>
+            </select>
+          </div>
+          <div id="calcResultado" class="calc-resultado" style="display:none"></div>
+          <div id="calcDetalle" class="calc-detalle"></div>
+        </div>
+      </div>
+
+      <div class="config-seccion">
+        <h3>📊 Estrategia de márgenes</h3>
+        <div class="modo-margen-tabs">
+          <button class="modo-tab activo" id="tabTabla" onclick="cambiarModoMargen('tabla')">📋 Tabla escalonada</button>
+          <button class="modo-tab" id="tabCurva" onclick="cambiarModoMargen('curva')">📈 Curva continua</button>
+          <button class="modo-tab" id="tabFijo" onclick="cambiarModoMargen('fijo')">🔒 Margen fijo</button>
+        </div>
+        <div class="panel-modo activo" id="panelTabla">
+          <table class="margenes-tabla">
+            <thead><tr><th>Desde (Bs.)</th><th>Hasta (Bs.)</th><th>Margen %</th><th></th></tr></thead>
+            <tbody id="tbodyMargenes"></tbody>
+          </table>
+          <button class="btn-add-rango" onclick="agregarRangoMargen()">＋ Agregar rango</button>
+          <button class="btn-guardar-config" style="margin-top:12px" onclick="guardarMargenes()">💾 Guardar tabla</button>
+        </div>
+        <div class="panel-modo" id="panelCurva">
+          <div class="config-fila"><label>Margen máximo %</label><input type="number" id="curvaMax" step="0.5" placeholder="200"></div>
+          <div class="config-ayuda">Para productos muy baratos (ej: Bs. 0.50)</div>
+          <div class="config-fila"><label>Margen mínimo %</label><input type="number" id="curvaMin" step="0.5" placeholder="20"></div>
+          <div class="config-ayuda">Para productos muy caros (ej: Bs. 500)</div>
+          <div class="config-fila"><label>Costo de referencia (Bs.)</label><input type="number" id="curvaRef" step="0.5" placeholder="5"></div>
+          <div class="config-ayuda">Punto donde la curva está anclada</div>
+          <div class="config-fila"><label>Agresividad (0.1 – 1.5)</label><input type="number" id="curvaAgr" step="0.05" min="0.1" max="1.5" placeholder="0.45"></div>
+          <div class="config-ayuda">0.1 = baja suave · 1.0 = baja rápido · Recomendado: 0.40–0.55</div>
+          <button class="btn-guardar-config" style="margin-top:8px" onclick="guardarCurva()">💾 Guardar curva</button>
+        </div>
+        <div class="panel-modo" id="panelFijo">
+          <div class="config-fila"><label>Margen fijo para todos los productos (%)</label><input type="number" id="margenFijoPct" step="0.5" min="0" placeholder="50"></div>
+          <div class="config-ayuda">Todos los productos dinámicos usarán este mismo porcentaje</div>
+          <button class="btn-guardar-config" style="margin-top:8px" onclick="guardarMargenFijo()">💾 Guardar margen fijo</button>
+        </div>
+      </div>
+
+      <div class="config-seccion">
+        <h3>🔢 Redondeo comercial</h3>
+        <div class="config-fila">
+          <label>Método de redondeo</label>
+          <select id="cfgRedondeo" onchange="guardarRedondeo()">
+            <option value="medio">Al Bs. 0.50 más cercano (ej: 1.21 → 1.50)</option>
+            <option value="entero">Al boliviano entero (ej: 1.21 → 2.00)</option>
+          </select>
+        </div>
+        <div class="config-ayuda">El redondeo siempre es hacia arriba — nunca baja el precio calculado</div>
+      </div>
+
+    </div>
+
     <div class="seccion" id="sec-config">
       <div class="config-seccion">
         <h3>💳 Descuento por pago QR</h3>
