@@ -333,9 +333,24 @@ var PRECIOS_API = {
   },
 
   // Calcular precio en el navegador (sin llamar a Supabase)
-  // Replica la misma lógica que la función SQL
+  // Replica exactamente la lógica de las funciones SQL
+  redondearPrecio: function(precio, metodo) {
+    switch(metodo) {
+      case 'arriba_entero':
+        return Math.ceil(precio);
+      case 'cercano_medio':
+        return Math.round(precio / 0.5) * 0.5;
+      case 'combinado':
+        if (precio < 20)  return Math.round(precio / 0.5) * 0.5;
+        if (precio < 100) return Math.round(precio);
+        return Math.round(precio / 5) * 5;
+      default: // arriba_medio
+        return Math.ceil(precio / 0.5) * 0.5;
+    }
+  },
+
   calcularPrecioLocal: function(costo, cfg, precioMinimo) {
-    if (!costo || costo <= 0) return 0;
+    if (!costo || costo <= 0) return { precio: 0, margen: 0 };
 
     var margen = 0;
 
@@ -354,7 +369,7 @@ var PRECIOS_API = {
       var rangos = cfg.margenes || [];
       for (var i = 0; i < rangos.length; i++) {
         var r = rangos[i];
-        if (costo >= r.desde && (r.hasta === null || costo <= r.hasta)) {
+        if (costo >= r.desde && (r.hasta === null || r.hasta === undefined || costo <= r.hasta)) {
           margen = parseFloat(r.margen_pct);
           break;
         }
@@ -363,8 +378,7 @@ var PRECIOS_API = {
     }
 
     var precioRaw = costo * (1 + margen / 100);
-    var unidad    = cfg.redondeo === 'entero' ? 1.0 : 0.5;
-    var precioFin = Math.ceil(precioRaw / unidad) * unidad;
+    var precioFin = this.redondearPrecio(precioRaw, cfg.redondeo || 'arriba_medio');
 
     if (precioMinimo && precioFin < precioMinimo) precioFin = precioMinimo;
 

@@ -326,8 +326,10 @@ header.admin-header h1 span{background:var(--amarillo);color:var(--texto);border
         <div class="config-fila">
           <label>Método de redondeo</label>
           <select id="cfgRedondeo" onchange="guardarRedondeo()">
-            <option value="medio">Al Bs. 0.50 más cercano (ej: 1.21 → 1.50)</option>
-            <option value="entero">Al boliviano entero (ej: 1.21 → 2.00)</option>
+            <option value="arriba_medio">↑ Siempre al 0.50 hacia arriba (ej: 3.23→3.50, 3.70→4.00)</option>
+            <option value="arriba_entero">↑ Siempre al boliviano entero hacia arriba (ej: 3.23→4.00)</option>
+            <option value="cercano_medio">≈ Al 0.50 más cercano (ej: 3.23→3.00, 3.26→3.50, 3.70→3.50)</option>
+            <option value="combinado">★ Combinado inteligente (0.50 &lt;Bs.20 · entero &lt;Bs.100 · Bs.5 &gt;Bs.100)</option>
           </select>
         </div>
         <div class="config-ayuda">El redondeo siempre es hacia arriba — nunca baja el precio calculado</div>
