@@ -167,6 +167,8 @@ header.admin-header h1 span{background:var(--amarillo);color:var(--texto);border
 .calc-fila input,.calc-fila select{padding:7px 10px;border:1.5px solid var(--borde);border-radius:7px;font-size:.85rem;background:white;}
 .calc-resultado{font-family:'Nunito',sans-serif;font-weight:900;font-size:1.4rem;color:var(--verde);margin-top:8px;}
 .calc-detalle{font-size:.75rem;color:var(--gris);margin-top:2px;}
+
+#graficoMargenes{display:block;}
 </style>
 </head>
 <body>
@@ -300,15 +302,17 @@ header.admin-header h1 span{background:var(--amarillo);color:var(--texto);border
           <button class="btn-guardar-config" style="margin-top:12px" onclick="guardarMargenes()">💾 Guardar tabla</button>
         </div>
         <div class="panel-modo" id="panelCurva">
-          <div class="config-fila"><label>Margen máximo %</label><input type="number" id="curvaMax" step="0.5" placeholder="200"></div>
+          <div class="config-fila"><label>Margen máximo %</label><input type="number" id="curvaMax" step="0.5" placeholder="120"></div>
           <div class="config-ayuda">Para productos muy baratos (ej: Bs. 0.50)</div>
           <div class="config-fila"><label>Margen mínimo %</label><input type="number" id="curvaMin" step="0.5" placeholder="20"></div>
           <div class="config-ayuda">Para productos muy caros (ej: Bs. 500)</div>
-          <div class="config-fila"><label>Costo de referencia (Bs.)</label><input type="number" id="curvaRef" step="0.5" placeholder="5"></div>
+          <div class="config-fila"><label>Costo de referencia (Bs.)</label><input type="number" id="curvaRef" step="0.5" placeholder="1.5"></div>
           <div class="config-ayuda">Punto donde la curva está anclada</div>
-          <div class="config-fila"><label>Agresividad (0.1 – 1.5)</label><input type="number" id="curvaAgr" step="0.05" min="0.1" max="1.5" placeholder="0.45"></div>
-          <div class="config-ayuda">0.1 = baja suave · 1.0 = baja rápido · Recomendado: 0.40–0.55</div>
+          <div class="config-fila"><label>Agresividad (0.1 – 1.5)</label><input type="number" id="curvaAgr" step="0.05" min="0.1" max="1.5" placeholder="0.55"></div>
+
+        <div class="config-ayuda">0.1 = baja suave · 1.0 = baja rápido · Recomendado: 0.40–0.55</div>
           <button class="btn-guardar-config" style="margin-top:8px" onclick="guardarCurva()">💾 Guardar curva</button>
+          <button class="btn-guardar-config" style="margin-top:8px;margin-left:8px;background:var(--azul)" onclick="actualizarGrafico()">📈 Ver gráfico</button>
         </div>
         <div class="panel-modo" id="panelFijo">
           <div class="config-fila"><label>Margen fijo para todos los productos (%)</label><input type="number" id="margenFijoPct" step="0.5" min="0" placeholder="50"></div>
@@ -330,6 +334,28 @@ header.admin-header h1 span{background:var(--amarillo);color:var(--texto);border
       </div>
 
     </div>
+
+
+      <div class="config-seccion" id="secGrafico" style="display:none">
+        <h3>📈 Gráfico de márgenes</h3>
+        <p style="font-size:.8rem;color:var(--gris);margin-bottom:14px">
+          Línea <span style="color:#16a34a;font-weight:700">verde</span> = curva continua &nbsp;|&nbsp;
+          Línea <span style="color:#2563eb;font-weight:700">azul</span> = tabla escalonada &nbsp;|&nbsp;
+          Eje X = costo del producto (Bs.) &nbsp;|&nbsp; Eje Y = margen %
+        </p>
+        <canvas id="graficoMargenes" style="width:100%;max-height:320px;border-radius:8px;background:white"></canvas>
+        <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <span style="font-size:.8rem;color:var(--gris)">Ver hasta costo:</span>
+          <select id="graficoRango" onchange="actualizarGrafico()" style="padding:6px 10px;border:1.5px solid var(--borde);border-radius:7px;font-size:.83rem;">
+            <option value="50">Bs. 50</option>
+            <option value="100">Bs. 100</option>
+            <option value="200" selected>Bs. 200</option>
+            <option value="500">Bs. 500</option>
+          </select>
+          <span style="font-size:.8rem;color:var(--gris);margin-left:10px">Mostrar precios de venta:</span>
+          <input type="checkbox" id="graficoMostrarPrecios" onchange="actualizarGrafico()" style="width:16px;height:16px;accent-color:var(--verde)">
+        </div>
+      </div>
 
     <div class="seccion" id="sec-config">
       <div class="config-seccion">
@@ -939,6 +965,139 @@ function previewPrecioDinamico() {
     ' · Margen: ' + res.margen.toFixed(1) + '%' +
     ' · TC actual: ' + tcActual.toFixed(2);
   prev.style.display = 'block';
+}
+
+
+/* ── GRÁFICO DE MÁRGENES ─────────────────────────────────── */
+var graficoChart = null;
+
+function actualizarGrafico() {
+  if (!cfgPrecios) return;
+  var seccion = document.getElementById('secGrafico');
+  seccion.style.display = 'block';
+  seccion.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  var rango     = parseInt(document.getElementById('graficoRango').value) || 200;
+  var mostrarP  = document.getElementById('graficoMostrarPrecios').checked;
+  var canvas    = document.getElementById('graficoMargenes');
+  var ctx       = canvas.getContext('2d');
+
+  // Generar puntos: 200 puntos en el rango
+  var costos = [];
+  var paso   = rango / 200;
+  for (var i = 1; i <= 200; i++) costos.push(parseFloat((i * paso).toFixed(3)));
+
+  // Calcular margen curva
+  var max = parseFloat(document.getElementById('curvaMax').value) || cfgPrecios.curva_margen_max;
+  var min = parseFloat(document.getElementById('curvaMin').value) || cfgPrecios.curva_margen_min;
+  var ref = parseFloat(document.getElementById('curvaRef').value) || cfgPrecios.curva_costo_ref;
+  var agr = parseFloat(document.getElementById('curvaAgr').value) || cfgPrecios.curva_agresividad;
+
+  var margenesCurva  = costos.map(function(c) {
+    var m = min + (max - min) * Math.pow(ref / c, agr);
+    return Math.max(min, Math.min(max, m));
+  });
+
+  // Calcular margen tabla (usar cfgPrecios.margenes actuales)
+  var margenes = leerMargenesDesdeDom().length > 0
+    ? leerMargenesDesdeDom()
+    : cfgPrecios.margenes;
+
+  var margenesTabla = costos.map(function(c) {
+    for (var i = 0; i < margenes.length; i++) {
+      var r = margenes[i];
+      if (c >= r.desde && (r.hasta === null || c <= r.hasta)) {
+        return parseFloat(r.margen_pct);
+      }
+    }
+    return 20;
+  });
+
+  // Si mostrar precios, convertir a precio de venta (redondeo 0.50)
+  var labelY = mostrarP ? 'Precio de venta (Bs.)' : 'Margen %';
+  var dataCurva = mostrarP
+    ? costos.map(function(c,i){ return Math.ceil(c*(1+margenesCurva[i]/100)/0.5)*0.5; })
+    : margenesCurva;
+  var dataTabla = mostrarP
+    ? costos.map(function(c,i){ return Math.ceil(c*(1+margenesTabla[i]/100)/0.5)*0.5; })
+    : margenesTabla;
+
+  // Destruir gráfico anterior
+  if (graficoChart) { graficoChart.destroy(); graficoChart = null; }
+
+  // Cargar Chart.js dinámicamente si no está cargado
+  function dibujar() {
+    graficoChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: costos.map(function(c){ return 'Bs.'+c.toFixed(1); }),
+        datasets: [
+          {
+            label: 'Curva continua',
+            data: dataCurva,
+            borderColor: '#16a34a',
+            backgroundColor: 'rgba(22,163,74,0.08)',
+            borderWidth: 2.5,
+            pointRadius: 0,
+            tension: 0.4,
+            fill: true
+          },
+          {
+            label: 'Tabla escalonada',
+            data: dataTabla,
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37,99,235,0.05)',
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0,
+            stepped: !mostrarP,
+            fill: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        animation: { duration: 300 },
+        plugins: {
+          legend: { position: 'top', labels: { font: { family: 'Nunito', weight: '700', size: 12 } } },
+          tooltip: {
+            callbacks: {
+              title: function(items){ return 'Costo: '+items[0].label; },
+              label: function(item){
+                var val = item.raw.toFixed(mostrarP?2:1);
+                return item.dataset.label+': '+(mostrarP?'Bs. ':'')+val+(mostrarP?'':'%');
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: {
+              maxTicksLimit: 10,
+              font: { size: 11 },
+              callback: function(val, idx){ return costos[idx] % (rango/10) < paso ? 'Bs.'+costos[idx].toFixed(0) : ''; }
+            },
+            grid: { color: 'rgba(0,0,0,0.05)' }
+          },
+          y: {
+            title: { display: true, text: labelY, font: { family: 'Nunito', weight: '700', size: 12 } },
+            grid: { color: 'rgba(0,0,0,0.05)' },
+            ticks: { callback: function(v){ return mostrarP?'Bs.'+v:v+'%'; } }
+          }
+        }
+      }
+    });
+  }
+
+  if (typeof Chart !== 'undefined') {
+    dibujar();
+  } else {
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';
+    s.onload = dibujar;
+    document.head.appendChild(s);
+  }
 }
 
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.getElementById('modalOverlay').classList.contains('activo'))cerrarModal();});
